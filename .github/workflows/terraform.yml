@@ -52,7 +52,7 @@ jobs:
           terraform plan -no-color -out=tfplan \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }}" \
-            -var="domain_name=${{ secrets.DOMAIN_NAME }}"
+            -var="hosted_zone_name=${{ secrets.HOSTED_ZONE_NAME }}"
         continue-on-error: true
 
       - name: Post plan to PR

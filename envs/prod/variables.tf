@@ -3,9 +3,9 @@ variable "aws_region" {
   default = "eu-west-1"
 }
 
-variable "domain_name" {
+variable "hosted_zone_name" {
   type        = string
-  description = "Root domain for the app, e.g. courtside.app"
+  description = "Root domain registered in Route 53, e.g. mysite.com — the courtside subdomain is derived from this"
 }
 
 variable "jwt_secret" {

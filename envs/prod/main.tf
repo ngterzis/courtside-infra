@@ -1,3 +1,12 @@
+data "aws_route53_zone" "main" {
+  name = var.hosted_zone_name
+}
+
+locals {
+  # trimsuffix handles the trailing dot that Route 53 zone names sometimes include
+  app_domain = "courtside.${trimsuffix(data.aws_route53_zone.main.name, ".")}"
+}
+
 module "vpc" {
   source = "../../modules/vpc"
 
@@ -53,7 +62,8 @@ module "cdn" {
   }
 
   name             = "courtside-prod"
-  domain_name      = var.domain_name
+  domain_name      = local.app_domain
+  route53_zone_id  = data.aws_route53_zone.main.zone_id
   s3_bucket_id     = module.frontend.bucket_id
   s3_bucket_domain = module.frontend.bucket_regional_domain
   s3_oac_id        = module.frontend.oac_id

@@ -11,10 +11,33 @@ terraform {
 resource "aws_acm_certificate" "main" {
   provider          = aws.us_east_1
   domain_name       = var.domain_name
-  subject_alternative_names = ["*.${var.domain_name}"]
   validation_method = "DNS"
 
   lifecycle { create_before_destroy = true }
+}
+
+# DNS validation records — Route 53 is global, no provider alias needed
+resource "aws_route53_record" "cert_validation" {
+  for_each = {
+    for dvo in aws_acm_certificate.main.domain_validation_options : dvo.domain_name => {
+      name   = dvo.resource_record_name
+      record = dvo.resource_record_value
+      type   = dvo.resource_record_type
+    }
+  }
+
+  allow_overwrite = true
+  zone_id         = var.route53_zone_id
+  name            = each.value.name
+  records         = [each.value.record]
+  type            = each.value.type
+  ttl             = 60
+}
+
+resource "aws_acm_certificate_validation" "main" {
+  provider                = aws.us_east_1
+  certificate_arn         = aws_acm_certificate.main.arn
+  validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
 }
 
 # OAC for Lambda Function URL (IAM auth)
@@ -143,8 +166,22 @@ resource "aws_cloudfront_distribution" "main" {
   }
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate.main.arn
+    # Use the validated ARN so CloudFront waits for DNS propagation
+    acm_certificate_arn      = aws_acm_certificate_validation.main.certificate_arn
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
+  }
+}
+
+# A alias record: courtside.<domain> → CloudFront
+resource "aws_route53_record" "app" {
+  zone_id = var.route53_zone_id
+  name    = var.domain_name
+  type    = "A"
+
+  alias {
+    name                   = aws_cloudfront_distribution.main.domain_name
+    zone_id                = aws_cloudfront_distribution.main.hosted_zone_id
+    evaluate_target_health = false
   }
 }
