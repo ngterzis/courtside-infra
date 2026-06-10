@@ -327,7 +327,7 @@ resource "aws_ecs_task_definition" "migrate" {
 
 # ── GitHub Actions OIDC ───────────────────────────────────────────────────────
 
-data "aws_iam_openid_connect_provider" "example" {
+data "aws_iam_openid_connect_provider" "github" {
   arn = "arn:aws:iam::794216920868:oidc-provider/token.actions.githubusercontent.com"
 }
 
