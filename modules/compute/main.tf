@@ -73,15 +73,15 @@ resource "aws_iam_role_policy" "lambda_data_api" {
 
 locals {
   lambda_env = {
-    USE_DATA_API              = "true"
-    DB_CLUSTER_ARN            = var.cluster_arn
-    DB_SECRET_ARN             = var.db_credentials_secret_arn
-    DB_NAME                   = var.db_name
-    JWT_SECRET                = var.jwt_secret
-    ANTHROPIC_API_KEY         = var.anthropic_api_key
+    USE_DATA_API      = "true"
+    DB_CLUSTER_ARN    = var.cluster_arn
+    DB_SECRET_ARN     = var.db_credentials_secret_arn
+    DB_NAME           = var.db_name
+    JWT_SECRET        = var.jwt_secret
+    ANTHROPIC_API_KEY = var.anthropic_api_key
     # LWA: uvicorn listens on this port inside the container
-    PORT                      = "8000"
-    AWS_LAMBDA_EXEC_WRAPPER   = "/opt/extensions/lambda-adapter"
+    PORT                    = "8000"
+    AWS_LAMBDA_EXEC_WRAPPER = "/opt/extensions/lambda-adapter"
   }
 }
 
