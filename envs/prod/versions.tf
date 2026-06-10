@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.9"
+  required_version = ">= 1.10"
 
   required_providers {
     aws = {
@@ -13,11 +13,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "courtside-terraform-state"
-    key            = "prod/terraform.tfstate"
-    region         = "eu-west-1"
-    dynamodb_table = "courtside-terraform-locks"
-    encrypt        = true
+    bucket  = "courtside-app-terraform-state"
+    key     = "prod/terraform.tfstate"
+    region  = "eu-central-1"
+    encrypt = true
   }
 }
 

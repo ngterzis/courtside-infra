@@ -13,7 +13,7 @@ permissions:
 
 env:
   TF_WORKING_DIR: envs/prod
-  AWS_REGION: eu-west-1
+  AWS_REGION: eu-central-1
 
 jobs:
   terraform:
