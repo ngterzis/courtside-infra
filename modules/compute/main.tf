@@ -135,7 +135,8 @@ resource "aws_lambda_function" "chat" {
   timeout       = 900
   memory_size   = 512
 
-  environment { variables = local.lambda_env }
+  # response_stream lets LWA stream the SSE chat response through the Function URL.
+  environment { variables = merge(local.lambda_env, { AWS_LWA_INVOKE_MODE = "response_stream" }) }
 
   lifecycle {
     ignore_changes = [image_uri]
