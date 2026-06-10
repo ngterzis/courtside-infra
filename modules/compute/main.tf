@@ -10,6 +10,21 @@ resource "aws_ecr_repository" "main" {
   image_scanning_configuration { scan_on_push = true }
 }
 
+# Seed a placeholder image on first creation so Lambda can be created before CI pushes a real image.
+resource "terraform_data" "ecr_seed" {
+  triggers_replace = aws_ecr_repository.main.repository_url
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      aws ecr get-login-password --region ${data.aws_region.current.name} | \
+        docker login --username AWS --password-stdin ${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com && \
+      docker pull public.ecr.aws/lambda/python:3.12 && \
+      docker tag public.ecr.aws/lambda/python:3.12 ${aws_ecr_repository.main.repository_url}:latest && \
+      docker push ${aws_ecr_repository.main.repository_url}:latest
+    EOT
+  }
+}
+
 resource "aws_ecr_lifecycle_policy" "main" {
   repository = aws_ecr_repository.main.name
   policy = jsonencode({
@@ -101,6 +116,8 @@ resource "aws_lambda_function" "api" {
     # CI/CD updates function code directly via aws lambda update-function-code
     ignore_changes = [image_uri]
   }
+
+  depends_on = [terraform_data.ecr_seed]
 }
 
 resource "aws_cloudwatch_log_group" "api" {
@@ -123,6 +140,8 @@ resource "aws_lambda_function" "chat" {
   lifecycle {
     ignore_changes = [image_uri]
   }
+
+  depends_on = [terraform_data.ecr_seed]
 }
 
 resource "aws_cloudwatch_log_group" "chat" {
