@@ -53,9 +53,14 @@ locals {
   apigw_origin_id = "apigw-api"
   chat_origin_id  = "lambda-chat"
 
-  # Strip trailing slash from URLs used as CloudFront origins
-  apigw_domain = replace(replace(var.api_gateway_invoke_url, "https://", ""), "/", "")
-  chat_domain  = replace(replace(var.chat_function_url, "https://", ""), "/", "")
+  # Extract hostname and stage path separately from the API Gateway invoke URL
+  # e.g. "https://id.execute-api.region.amazonaws.com/prod/" → host="id..." path="/prod"
+  _apigw_parts = split("/", replace(var.api_gateway_invoke_url, "https://", ""))
+  apigw_domain = local._apigw_parts[0]
+  apigw_path   = "/${local._apigw_parts[1]}"
+
+  # Lambda Function URL has no path component, just strip scheme and trailing slash
+  chat_domain = trimsuffix(replace(var.chat_function_url, "https://", ""), "/")
 }
 
 resource "aws_cloudfront_distribution" "main" {
@@ -75,6 +80,7 @@ resource "aws_cloudfront_distribution" "main" {
   origin {
     origin_id   = local.apigw_origin_id
     domain_name = local.apigw_domain
+    origin_path = local.apigw_path
     custom_origin_config {
       http_port              = 80
       https_port             = 443

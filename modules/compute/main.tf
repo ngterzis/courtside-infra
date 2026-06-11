@@ -88,6 +88,7 @@ resource "aws_iam_role_policy" "lambda_data_api" {
 
 locals {
   lambda_env = {
+    ENV               = "prod"
     USE_DATA_API      = "true"
     DB_CLUSTER_ARN    = var.cluster_arn
     DB_SECRET_ARN     = var.db_credentials_secret_arn
