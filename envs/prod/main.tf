@@ -53,6 +53,54 @@ module "frontend" {
   name   = "courtside-prod"
 }
 
+# GitHub Actions role for the frontend repo to deploy to S3 + invalidate CloudFront
+data "aws_iam_openid_connect_provider" "github" {
+  arn = "arn:aws:iam::794216920868:oidc-provider/token.actions.githubusercontent.com"
+}
+
+resource "aws_iam_role" "github_actions_frontend" {
+  name = "courtside-prod-github-actions-frontend"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Federated = data.aws_iam_openid_connect_provider.github.arn }
+      Action    = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringLike = {
+          "token.actions.githubusercontent.com:sub" = "repo:ngterzis/courtside:*"
+        }
+        StringEquals = {
+          "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "github_actions_frontend" {
+  name = "courtside-prod-github-actions-frontend"
+  role = aws_iam_role.github_actions_frontend.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:PutObject", "s3:DeleteObject", "s3:GetObject", "s3:ListBucket"]
+        Resource = [
+          "arn:aws:s3:::${module.frontend.bucket_id}",
+          "arn:aws:s3:::${module.frontend.bucket_id}/*",
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["cloudfront:CreateInvalidation"]
+        Resource = "arn:aws:cloudfront::794216920868:distribution/${module.cdn.cloudfront_distribution_id}"
+      },
+    ]
+  })
+}
+
 module "cdn" {
   source = "../../modules/cdn"
 

@@ -1,4 +1,7 @@
 output "cloudfront_domain" { value = module.cdn.cloudfront_domain }
+output "cloudfront_distribution_id" { value = module.cdn.cloudfront_distribution_id }
+output "frontend_s3_bucket" { value = module.frontend.bucket_id }
+output "github_actions_frontend_role_arn" { value = aws_iam_role.github_actions_frontend.arn }
 output "ecr_repository_url" { value = module.compute.ecr_repository_url }
 output "api_lambda_name" { value = module.compute.api_lambda_name }
 output "chat_lambda_name" { value = module.compute.chat_lambda_name }
