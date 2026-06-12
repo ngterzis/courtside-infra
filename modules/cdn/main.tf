@@ -111,9 +111,12 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD"]
     compress               = false
 
+    # Do NOT forward the viewer's Authorization header here: OAC puts its own
+    # SigV4 signature in the Authorization header, and forwarding the viewer's
+    # value overwrites it, causing the Function URL to reject the request (403).
     forwarded_values {
       query_string = true
-      headers      = ["Authorization", "Content-Type"]
+      headers      = ["Content-Type"]
       cookies { forward = "none" }
     }
 
