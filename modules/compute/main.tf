@@ -152,9 +152,23 @@ resource "aws_cloudwatch_log_group" "chat" {
 }
 
 resource "aws_lambda_function_url" "chat" {
-  function_name      = aws_lambda_function.chat.function_name
-  authorization_type = "AWS_IAM" # CloudFront OAC signs requests
+  function_name = aws_lambda_function.chat.function_name
+  # OAC+IAM can't sign POST bodies to a Function URL, so we use a public URL and
+  # let the app's JWT (get_current_player) be the gatekeeper. See chat behavior
+  # in the cdn module for the CloudFront wiring.
+  authorization_type = "NONE"
   invoke_mode        = "RESPONSE_STREAM"
+}
+
+# AuthType=NONE still needs a resource policy granting public InvokeFunctionUrl.
+# Anyone can reach the URL, but every request must carry a valid JWT or the app
+# returns 401.
+resource "aws_lambda_permission" "chat_public_url" {
+  statement_id           = "FunctionURLAllowPublicAccess"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = aws_lambda_function.chat.function_name
+  principal              = "*"
+  function_url_auth_type = "NONE"
 }
 
 # ── API Gateway REST ──────────────────────────────────────────────────────────

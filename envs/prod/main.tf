@@ -118,5 +118,4 @@ module "cdn" {
 
   api_gateway_invoke_url = module.compute.api_gateway_invoke_url
   chat_function_url      = module.compute.chat_function_url
-  chat_lambda_name       = module.compute.chat_lambda_name
 }

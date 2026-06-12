@@ -40,14 +40,6 @@ resource "aws_acm_certificate_validation" "main" {
   validation_record_fqdns = [for r in aws_route53_record.cert_validation : r.fqdn]
 }
 
-# OAC for Lambda Function URL (IAM auth)
-resource "aws_cloudfront_origin_access_control" "lambda" {
-  name                              = "${var.name}-lambda-oac"
-  origin_access_control_origin_type = "lambda"
-  signing_behavior                  = "always"
-  signing_protocol                  = "sigv4"
-}
-
 locals {
   s3_origin_id    = "s3-frontend"
   apigw_origin_id = "apigw-api"
@@ -89,11 +81,11 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Origin 3: Lambda Function URL (/api/chat*)
+  # Origin 3: Lambda Function URL (/api/chat*). AuthType=NONE, so no OAC signing —
+  # the app enforces JWT auth.
   origin {
-    origin_id                = local.chat_origin_id
-    domain_name              = local.chat_domain
-    origin_access_control_id = aws_cloudfront_origin_access_control.lambda.id
+    origin_id   = local.chat_origin_id
+    domain_name = local.chat_domain
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -111,12 +103,11 @@ resource "aws_cloudfront_distribution" "main" {
     cached_methods         = ["GET", "HEAD"]
     compress               = false
 
-    # Do NOT forward the viewer's Authorization header here: OAC puts its own
-    # SigV4 signature in the Authorization header, and forwarding the viewer's
-    # value overwrites it, causing the Function URL to reject the request (403).
+    # Forward Authorization so the app receives the viewer's JWT. With the
+    # Function URL on AuthType=NONE there's no OAC signature competing for it.
     forwarded_values {
       query_string = true
-      headers      = ["Content-Type"]
+      headers      = ["Authorization", "Content-Type"]
       cookies { forward = "none" }
     }
 
@@ -180,19 +171,6 @@ resource "aws_cloudfront_distribution" "main" {
     ssl_support_method       = "sni-only"
     minimum_protocol_version = "TLSv1.2_2021"
   }
-}
-
-# Allow CloudFront to invoke the IAM-authed chat Function URL. OAC signs each
-# request with sigv4, but the Function URL still rejects it with 403 unless the
-# Lambda's resource policy grants cloudfront.amazonaws.com invoke permission,
-# scoped to this distribution.
-resource "aws_lambda_permission" "chat_cloudfront" {
-  statement_id           = "AllowCloudFrontInvoke"
-  action                 = "lambda:InvokeFunctionUrl"
-  function_name          = var.chat_lambda_name
-  principal              = "cloudfront.amazonaws.com"
-  source_arn             = aws_cloudfront_distribution.main.arn
-  function_url_auth_type = "AWS_IAM"
 }
 
 # A alias record: courtside.<domain> → CloudFront
