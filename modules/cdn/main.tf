@@ -179,6 +179,19 @@ resource "aws_cloudfront_distribution" "main" {
   }
 }
 
+# Allow CloudFront to invoke the IAM-authed chat Function URL. OAC signs each
+# request with sigv4, but the Function URL still rejects it with 403 unless the
+# Lambda's resource policy grants cloudfront.amazonaws.com invoke permission,
+# scoped to this distribution.
+resource "aws_lambda_permission" "chat_cloudfront" {
+  statement_id           = "AllowCloudFrontInvoke"
+  action                 = "lambda:InvokeFunctionUrl"
+  function_name          = var.chat_lambda_name
+  principal              = "cloudfront.amazonaws.com"
+  source_arn             = aws_cloudfront_distribution.main.arn
+  function_url_auth_type = "AWS_IAM"
+}
+
 # A alias record: courtside.<domain> → CloudFront
 resource "aws_route53_record" "app" {
   zone_id = var.route53_zone_id
