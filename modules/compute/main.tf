@@ -160,15 +160,24 @@ resource "aws_lambda_function_url" "chat" {
   invoke_mode        = "RESPONSE_STREAM"
 }
 
-# AuthType=NONE still needs a resource policy granting public InvokeFunctionUrl.
-# Anyone can reach the URL, but every request must carry a valid JWT or the app
-# returns 401.
+# AuthType=NONE still needs a resource policy granting public access. Anyone can
+# reach the URL, but every request must carry a valid JWT or the app returns 401.
+# A RESPONSE_STREAM Function URL requires BOTH lambda:InvokeFunctionUrl AND
+# lambda:InvokeFunction granted to all principals — with only InvokeFunctionUrl,
+# the URL returns 403 AccessDeniedException for every caller.
 resource "aws_lambda_permission" "chat_public_url" {
   statement_id           = "FunctionURLAllowPublicAccess"
   action                 = "lambda:InvokeFunctionUrl"
   function_name          = aws_lambda_function.chat.function_name
   principal              = "*"
   function_url_auth_type = "NONE"
+}
+
+resource "aws_lambda_permission" "chat_public_invoke" {
+  statement_id  = "FunctionURLAllowPublicInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.chat.function_name
+  principal     = "*"
 }
 
 # ── API Gateway REST ──────────────────────────────────────────────────────────
