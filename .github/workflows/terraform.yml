@@ -37,6 +37,19 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform init
 
+      # TEMP: two-step apply to remove the Lambda OAC. Applying the distribution
+      # update and the OAC delete in one plan races (OriginAccessControlInUse
+      # 409), so disassociate the OAC from the distribution first, wait for it to
+      # deploy, then let the full apply delete the now-unreferenced OAC. Remove
+      # this step once it has run successfully.
+      - name: TEMP - two-step OAC removal
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ${{ env.TF_WORKING_DIR }}
+        run: |
+          VARS='-var=jwt_secret=${{ secrets.JWT_SECRET }} -var=anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }} -var=hosted_zone_name=${{ secrets.HOSTED_ZONE_NAME }}'
+          terraform apply -auto-approve -target=module.cdn.aws_cloudfront_distribution.main $VARS
+          terraform apply -auto-approve $VARS
+
       - name: Terraform format check
         working-directory: ${{ env.TF_WORKING_DIR }}
         run: terraform fmt -check -recursive ../../
