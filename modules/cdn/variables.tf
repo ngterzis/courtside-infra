@@ -9,3 +9,9 @@ variable "s3_bucket_domain" { type = string }
 variable "s3_oac_id" { type = string }
 variable "api_gateway_invoke_url" { type = string }
 variable "chat_function_url" { type = string }
+
+variable "log_retention_days" {
+  type        = number
+  default     = 90
+  description = "Days to retain CloudFront access logs before S3 expires them. IP addresses are personal data — keep this short."
+}

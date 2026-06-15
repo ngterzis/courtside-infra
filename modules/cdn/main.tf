@@ -55,11 +55,58 @@ locals {
   chat_domain = trimsuffix(replace(var.chat_function_url, "https://", ""), "/")
 }
 
+# S3 bucket for CloudFront standard access logs. The c-ip field captures the real
+# viewer IP for every request across all paths (frontend, /api/*, chat).
+resource "aws_s3_bucket" "cf_logs" {
+  bucket        = "${var.name}-cloudfront-logs"
+  force_destroy = true
+}
+
+# CloudFront standard log delivery writes via the awslogsdelivery account using a
+# bucket ACL, so ACLs must be enabled (BucketOwnerPreferred). CloudFront adds the
+# required grant automatically when logging_config is set.
+resource "aws_s3_bucket_ownership_controls" "cf_logs" {
+  bucket = aws_s3_bucket.cf_logs.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_public_access_block" "cf_logs" {
+  bucket                  = aws_s3_bucket.cf_logs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Expire logs after the retention window — IP addresses are personal data (GDPR).
+resource "aws_s3_bucket_lifecycle_configuration" "cf_logs" {
+  bucket = aws_s3_bucket.cf_logs.id
+  rule {
+    id     = "expire-logs"
+    status = "Enabled"
+    filter {}
+    expiration {
+      days = var.log_retention_days
+    }
+  }
+}
+
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"
   aliases             = [var.domain_name]
+
+  logging_config {
+    bucket          = aws_s3_bucket.cf_logs.bucket_domain_name
+    prefix          = "cloudfront/"
+    include_cookies = false
+  }
+
+  # Ensure ACLs are enabled before CloudFront tries to grant itself log-write access
+  depends_on = [aws_s3_bucket_ownership_controls.cf_logs]
 
   # Origin 1: S3 (frontend static files)
   origin {
