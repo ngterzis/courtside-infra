@@ -49,10 +49,12 @@ resource "aws_security_group" "db" {
 }
 
 resource "aws_rds_cluster" "main" {
-  cluster_identifier     = "${var.name}-cluster"
-  engine                 = "aurora-postgresql"
-  engine_mode            = "provisioned"
-  engine_version         = "16.6"
+  cluster_identifier = "${var.name}-cluster"
+  engine             = "aurora-postgresql"
+  engine_mode        = "provisioned"
+  # 16.6 was the original pin; AWS auto-applied a minor upgrade to 16.11 in a
+  # maintenance window. Aurora can't downgrade, so track the actual version.
+  engine_version         = "16.11"
   database_name          = var.db_name
   master_username        = var.db_username
   master_password        = random_password.db.result
