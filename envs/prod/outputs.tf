@@ -7,6 +7,8 @@ output "api_lambda_name" { value = module.compute.api_lambda_name }
 output "chat_lambda_name" { value = module.compute.chat_lambda_name }
 output "ecs_cluster_name" { value = module.compute.ecs_cluster_name }
 output "migrate_task_definition_arn" { value = module.compute.migrate_task_definition_arn }
-output "fargate_subnet_id" { value = module.vpc.private_subnet_ids[0] }
+# Migrate task runs in a public subnet (with assignPublicIp=ENABLED in the run-task
+# call) so it has internet egress without a NAT gateway.
+output "fargate_subnet_id" { value = module.vpc.public_subnet_ids[0] }
 output "fargate_security_group_id" { value = module.compute.fargate_security_group_id }
 output "github_actions_role_arn" { value = module.compute.github_actions_role_arn }
