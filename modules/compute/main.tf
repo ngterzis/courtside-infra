@@ -87,7 +87,14 @@ resource "aws_iam_role_policy" "lambda_data_api" {
 }
 
 locals {
-  lambda_env = {
+  # Only inject the model env vars when set, so an empty value never overrides the
+  # app's baseline-fallback default.
+  ml_env = merge(
+    var.feature_group_name != "" ? { FEATURE_GROUP_NAME = var.feature_group_name } : {},
+    var.sagemaker_endpoint_name != "" ? { SAGEMAKER_ENDPOINT_NAME = var.sagemaker_endpoint_name } : {},
+  )
+
+  lambda_env = merge({
     ENV               = "prod"
     USE_DATA_API      = "true"
     DB_CLUSTER_ARN    = var.cluster_arn
@@ -98,7 +105,7 @@ locals {
     # LWA: uvicorn listens on this port inside the container
     PORT                    = "8000"
     AWS_LAMBDA_EXEC_WRAPPER = "/opt/extensions/lambda-adapter"
-  }
+  }, local.ml_env)
 }
 
 # ── Lambda A: API (standard invoke, behind API Gateway) ──────────────────────
