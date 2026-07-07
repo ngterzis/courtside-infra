@@ -62,14 +62,28 @@ resource "aws_iam_role_policy" "sagemaker_exec_s3" {
   role = aws_iam_role.sagemaker_exec.id
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
-      Resource = [
-        aws_s3_bucket.ml.arn,
-        "${aws_s3_bucket.ml.arn}/*",
-      ]
-    }]
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject", "s3:ListBucket"]
+        Resource = [
+          aws_s3_bucket.ml.arn,
+          "${aws_s3_bucket.ml.arn}/*",
+        ]
+      },
+      # Feature Store validates the offline store bucket with GetBucketAcl and
+      # writes offline records with PutObjectAcl.
+      {
+        Effect   = "Allow"
+        Action   = ["s3:GetBucketAcl"]
+        Resource = [aws_s3_bucket.ml.arn]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["s3:PutObjectAcl"]
+        Resource = ["${aws_s3_bucket.ml.arn}/*"]
+      },
+    ]
   })
 }
 
