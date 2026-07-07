@@ -87,6 +87,22 @@ resource "aws_iam_role_policy" "sagemaker_exec_s3" {
   })
 }
 
+# MLflow REST calls (via the sagemaker-mlflow plugin) from training jobs running
+# as this role. AmazonSageMakerFullAccess does not cover the sagemaker-mlflow
+# namespace — the Studio default role with that policy still got AccessDenied.
+resource "aws_iam_role_policy" "sagemaker_exec_mlflow" {
+  name = "${var.name}-sagemaker-exec-mlflow"
+  role = aws_iam_role.sagemaker_exec.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = ["sagemaker-mlflow:*"]
+      Resource = [aws_sagemaker_mlflow_tracking_server.main.arn]
+    }]
+  })
+}
+
 # ── Feature Store: player-form feature group ──────────────────────────────────
 
 resource "aws_sagemaker_feature_group" "player_form" {
