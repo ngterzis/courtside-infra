@@ -8,6 +8,37 @@ locals {
 
   # The endpoint is created at deploy time (not by Terraform), but IAM needs its ARN.
   endpoint_arn = "arn:aws:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:endpoint/${var.endpoint_name}"
+
+  # The pipeline itself is created/updated by the backend's CI (`python -m ml.pipeline
+  # upsert`), not Terraform — same story as the endpoint above. IAM still needs the ARN.
+  pipeline_arn = "arn:aws:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:pipeline/${var.pipeline_name}"
+}
+
+# ── ECR: image for the Ingest / PrepareData pipeline steps ─────────────────────
+# Separate from modules/compute's app repo — the `ml` uv group (sagemaker, xgboost,
+# mlflow, pandas) is deliberately kept out of the serving Lambda image.
+
+resource "aws_ecr_repository" "pipeline" {
+  name                 = "${var.name}-ml-pipeline"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration { scan_on_push = true }
+}
+
+resource "aws_ecr_lifecycle_policy" "pipeline" {
+  repository = aws_ecr_repository.pipeline.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
+      }
+      action = { type = "expire" }
+    }]
+  })
 }
 
 # ── S3: offline feature store + Athena results + MLflow artifacts ──────────────

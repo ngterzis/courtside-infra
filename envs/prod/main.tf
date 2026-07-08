@@ -36,6 +36,7 @@ locals {
   ml_feature_group_name       = "courtside-player-form"
   ml_model_package_group_name = "courtside-next-game-points"
   ml_endpoint_name            = "courtside-next-game-points"
+  ml_pipeline_name            = "courtside-next-game-points"
 
   # MUST match courtside.ml.features.FEATURE_NAMES in the backend repo.
   ml_feature_names = [
@@ -56,6 +57,7 @@ module "ml" {
   feature_names            = local.ml_feature_names
   model_package_group_name = local.ml_model_package_group_name
   endpoint_name            = local.ml_endpoint_name
+  pipeline_name            = local.ml_pipeline_name
 }
 
 module "compute" {
@@ -100,6 +102,36 @@ resource "aws_iam_role_policy" "lambda_sagemaker" {
         Effect   = "Allow"
         Action   = ["sagemaker:GetRecord"]
         Resource = module.ml.feature_group_arn
+      },
+    ]
+  })
+}
+
+# The SageMaker Pipeline's Ingest step now runs as a Processing Job under
+# sagemaker_exec (not on a laptop with a developer's own credentials), so it needs
+# the same RDS Data API access the app Lambda has — mirrors lambda_data_api in
+# modules/compute/main.tf.
+resource "aws_iam_role_policy" "sagemaker_exec_data_api" {
+  name = "courtside-prod-sagemaker-exec-data-api"
+  role = module.ml.sagemaker_exec_role_name
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "rds-data:ExecuteStatement",
+          "rds-data:BatchExecuteStatement",
+          "rds-data:BeginTransaction",
+          "rds-data:CommitTransaction",
+          "rds-data:RollbackTransaction",
+        ]
+        Resource = module.database.cluster_arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = module.database.db_credentials_secret_arn
       },
     ]
   })
@@ -179,6 +211,19 @@ resource "aws_iam_role_policy" "github_actions_ml" {
         Condition = {
           StringEquals = { "iam:PassedToService" = "sagemaker.amazonaws.com" }
         }
+      },
+      {
+        # Keep the SageMaker Pipeline definition in sync with ml/pipeline.py on every
+        # push (`python -m ml.pipeline upsert`). Runs stay on-demand — CI only
+        # registers the pipeline, it never starts an execution.
+        Effect = "Allow"
+        Action = [
+          "sagemaker:CreatePipeline",
+          "sagemaker:UpdatePipeline",
+          "sagemaker:DescribePipeline",
+          "sagemaker:DeletePipeline",
+        ]
+        Resource = module.ml.pipeline_arn
       },
     ]
   })

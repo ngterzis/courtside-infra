@@ -28,6 +28,11 @@ variable "endpoint_name" {
   description = "Serverless inference endpoint name (created by the deploy pipeline, not Terraform)"
 }
 
+variable "pipeline_name" {
+  type        = string
+  description = "SageMaker Pipeline name for the ingest/train/register DAG (created by CI, not Terraform)"
+}
+
 variable "mlflow_server_size" {
   type        = string
   default     = "Small"

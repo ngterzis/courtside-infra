@@ -22,3 +22,7 @@ output "ml_sagemaker_role_arn" { value = module.ml.sagemaker_exec_role_arn }
 output "ml_model_package_group" { value = module.ml.model_package_group_name }
 output "ml_endpoint_name" { value = module.ml.endpoint_name }
 output "mlflow_tracking_server_arn" { value = module.ml.mlflow_tracking_server_arn }
+output "ml_pipeline_name" { value = module.ml.pipeline_name }
+output "ml_pipeline_repository_url" { value = module.ml.pipeline_repository_url }
+output "db_cluster_arn" { value = module.database.cluster_arn }
+output "db_credentials_secret_arn" { value = module.database.db_credentials_secret_arn }
