@@ -14,6 +14,24 @@ locals {
   pipeline_arn = "arn:aws:sagemaker:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:pipeline/${var.pipeline_name}"
 }
 
+# ── Athena: dedicated workgroup for the PrepareData step's training-set query ──
+# The account's "primary" workgroup has Managed Query Results enabled, which is
+# mutually exclusive with the explicit ResultConfiguration/output_location the SDK's
+# AthenaQuery.run() always sends — StartQueryExecution rejects the combination. A
+# workgroup we create ourselves defaults to classic (non-managed) results, so an
+# explicit output_location works.
+
+resource "aws_athena_workgroup" "ml" {
+  name          = "${var.name}-ml"
+  force_destroy = true
+
+  configuration {
+    result_configuration {
+      output_location = local.athena_output_uri
+    }
+  }
+}
+
 # ── ECR: image for the Ingest / PrepareData pipeline steps ─────────────────────
 # Separate from modules/compute's app repo — the `ml` uv group (sagemaker, xgboost,
 # mlflow, pandas) is deliberately kept out of the serving Lambda image.

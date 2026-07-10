@@ -18,6 +18,7 @@ output "ml_bucket" { value = module.ml.ml_bucket }
 output "ml_feature_group_name" { value = module.ml.feature_group_name }
 output "ml_offline_store_s3" { value = module.ml.offline_store_s3 }
 output "ml_athena_output_s3" { value = module.ml.athena_output_s3 }
+output "ml_athena_workgroup" { value = module.ml.athena_workgroup }
 output "ml_sagemaker_role_arn" { value = module.ml.sagemaker_exec_role_arn }
 output "ml_model_package_group" { value = module.ml.model_package_group_name }
 output "ml_endpoint_name" { value = module.ml.endpoint_name }

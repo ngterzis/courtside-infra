@@ -3,6 +3,7 @@ output "ml_bucket_arn" { value = aws_s3_bucket.ml.arn }
 
 output "offline_store_s3" { value = local.offline_store_uri }
 output "athena_output_s3" { value = local.athena_output_uri }
+output "athena_workgroup" { value = aws_athena_workgroup.ml.name }
 
 output "sagemaker_exec_role_arn" { value = aws_iam_role.sagemaker_exec.arn }
 output "sagemaker_exec_role_name" { value = aws_iam_role.sagemaker_exec.name }
