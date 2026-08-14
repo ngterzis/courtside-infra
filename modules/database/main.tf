@@ -6,9 +6,6 @@ resource "random_password" "db" {
 # Secret for RDS Data API (username + password only)
 resource "aws_secretsmanager_secret" "db_credentials" {
   name = "${var.name}/db-credentials"
-  # Contents are Terraform-generated; skip the recovery window so destroy/apply
-  # cycles don't fail with "already scheduled for deletion".
-  recovery_window_in_days = 0
 }
 
 resource "aws_secretsmanager_secret_version" "db_credentials" {
@@ -21,8 +18,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 
 # Full connection URL for Fargate migration task (psycopg direct connection)
 resource "aws_secretsmanager_secret" "db_url" {
-  name                    = "${var.name}/db-url"
-  recovery_window_in_days = 0
+  name = "${var.name}/db-url"
 }
 
 resource "aws_secretsmanager_secret_version" "db_url" {

@@ -18,16 +18,3 @@ variable "github_repo" {
   type        = string
   description = "org/repo for GitHub Actions OIDC trust, e.g. ngterzis/courtside-backend"
 }
-
-# Next-game points model. Both default to "" so the API falls back to the
-# trailing-average baseline until an endpoint exists — set sagemaker_endpoint_name
-# once the deploy pipeline has shipped the Serverless endpoint.
-variable "sagemaker_endpoint_name" {
-  type    = string
-  default = ""
-}
-
-variable "feature_group_name" {
-  type    = string
-  default = ""
-}
