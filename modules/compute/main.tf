@@ -415,9 +415,16 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
-        # Update Lambda function code
-        Effect   = "Allow"
-        Action   = ["lambda:UpdateFunctionCode"]
+        # Ship new image code, and read it back. The deploy workflow records
+        # Code.ResolvedImageUri before building so it has a rollback target,
+        # and waits on GetFunctionConfiguration after each update because
+        # UpdateFunctionCode returns while LastUpdateStatus is InProgress.
+        Effect = "Allow"
+        Action = [
+          "lambda:UpdateFunctionCode",
+          "lambda:GetFunction",
+          "lambda:GetFunctionConfiguration",
+        ]
         Resource = [aws_lambda_function.api.arn, aws_lambda_function.chat.arn]
       },
       {
