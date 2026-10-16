@@ -55,16 +55,18 @@ jobs:
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }}" \
             -var="hosted_zone_name=${{ secrets.HOSTED_ZONE_NAME }}"
-        continue-on-error: true
 
+      # Runs when the plan failed too, so the error lands on the PR; the job
+      # still fails because the plan step did.
       - name: Post plan to PR
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && !cancelled() && steps.plan.outcome != 'skipped'
         uses: actions/github-script@v7
         with:
           script: |
-            const output = `#### Terraform Plan 📖
+            const output = `#### Terraform Plan 📖 \`${{ steps.plan.outcome }}\`
             \`\`\`
             ${{ steps.plan.outputs.stdout }}
+            ${{ steps.plan.outputs.stderr }}
             \`\`\`
             *Pushed by @${{ github.actor }}*`;
             github.rest.issues.createComment({
