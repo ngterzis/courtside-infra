@@ -15,3 +15,9 @@ variable "log_retention_days" {
   default     = 90
   description = "Days to retain CloudFront access logs before S3 expires them. IP addresses are personal data — keep this short."
 }
+
+variable "origin_secret" {
+  type        = string
+  sensitive   = true
+  description = "Sent to the API and chat origins as X-Origin-Verify; the app rejects requests without it."
+}

@@ -7,3 +7,7 @@ output "fargate_security_group_id" { value = aws_security_group.fargate.id }
 output "ecs_cluster_name" { value = aws_ecs_cluster.main.name }
 output "migrate_task_definition_arn" { value = aws_ecs_task_definition.migrate.arn }
 output "github_actions_role_arn" { value = aws_iam_role.github_actions.arn }
+output "origin_secret" {
+  value     = random_password.origin_secret.result
+  sensitive = true
+}

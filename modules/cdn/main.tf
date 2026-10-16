@@ -141,6 +141,10 @@ resource "aws_cloudfront_distribution" "main" {
     origin_id   = local.apigw_origin_id
     domain_name = local.apigw_domain
     origin_path = local.apigw_path
+    custom_header {
+      name  = "X-Origin-Verify"
+      value = var.origin_secret
+    }
     custom_origin_config {
       http_port              = 80
       https_port             = 443
@@ -154,6 +158,10 @@ resource "aws_cloudfront_distribution" "main" {
   origin {
     origin_id   = local.chat_origin_id
     domain_name = local.chat_domain
+    custom_header {
+      name  = "X-Origin-Verify"
+      value = var.origin_secret
+    }
     custom_origin_config {
       http_port              = 80
       https_port             = 443

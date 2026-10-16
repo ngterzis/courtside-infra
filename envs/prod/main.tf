@@ -118,4 +118,5 @@ module "cdn" {
 
   api_gateway_invoke_url = module.compute.api_gateway_invoke_url
   chat_function_url      = module.compute.chat_function_url
+  origin_secret          = module.compute.origin_secret
 }
