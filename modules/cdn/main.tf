@@ -93,6 +93,27 @@ resource "aws_s3_bucket_lifecycle_configuration" "cf_logs" {
   }
 }
 
+# SPA routing: rewrite client-side routes (/login, /games/123) to /index.html at the
+# edge. S3 returns 403 (not 404) for missing keys since CloudFront lacks ListBucket,
+# and distribution-wide custom_error_responses would also rewrite API errors.
+resource "aws_cloudfront_function" "spa_rewrite" {
+  name    = "${var.name}-spa-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      var uri = request.uri;
+      // Paths whose last segment has an extension are real objects (assets, favicon)
+      var last = uri.substring(uri.lastIndexOf('/') + 1);
+      if (last.indexOf('.') === -1) {
+        request.uri = '/index.html';
+      }
+      return request;
+    }
+  EOF
+}
+
 resource "aws_cloudfront_distribution" "main" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -196,16 +217,14 @@ resource "aws_cloudfront_distribution" "main" {
       cookies { forward = "none" }
     }
 
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.spa_rewrite.arn
+    }
+
     min_ttl     = 0
     default_ttl = 3600
     max_ttl     = 86400
-  }
-
-  # SPA: serve index.html for all 404s so React Router works
-  custom_error_response {
-    error_code         = 404
-    response_code      = 200
-    response_page_path = "/index.html"
   }
 
   restrictions {
