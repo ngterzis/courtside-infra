@@ -95,7 +95,7 @@ resource "random_password" "origin_secret" {
 }
 
 locals {
-  lambda_env = {
+  lambda_env = merge({
     ORIGIN_SECRET     = random_password.origin_secret.result
     ENV               = "prod"
     USE_DATA_API      = "true"
@@ -104,14 +104,19 @@ locals {
     DB_NAME           = var.db_name
     JWT_SECRET        = var.jwt_secret
     ANTHROPIC_API_KEY = var.anthropic_api_key
-    # Chat tracing (Langfuse). Empty keys disable it in the backend.
-    LANGFUSE_PUBLIC_KEY = var.langfuse_public_key
-    LANGFUSE_SECRET_KEY = var.langfuse_secret_key
-    LANGFUSE_HOST       = var.langfuse_host
     # LWA: uvicorn listens on this port inside the container
     PORT                    = "8000"
     AWS_LAMBDA_EXEC_WRAPPER = "/opt/extensions/lambda-adapter"
-  }
+    },
+    # Chat tracing (Langfuse), only when configured: the provider plans empty
+    # values as null, so leaving them out keeps unconfigured plans clean. Keyed
+    # on the public key so the condition isn't sensitive and doesn't hide the
+    # rest of the environment in plan output.
+    var.langfuse_public_key == "" ? {} : {
+      LANGFUSE_PUBLIC_KEY = var.langfuse_public_key
+      LANGFUSE_SECRET_KEY = var.langfuse_secret_key
+      LANGFUSE_HOST       = var.langfuse_host
+  })
 }
 
 # ── Lambda A: API (standard invoke, behind API Gateway) ──────────────────────
