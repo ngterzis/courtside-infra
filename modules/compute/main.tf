@@ -104,6 +104,10 @@ locals {
     DB_NAME           = var.db_name
     JWT_SECRET        = var.jwt_secret
     ANTHROPIC_API_KEY = var.anthropic_api_key
+    # Chat tracing (Langfuse). Empty keys disable it in the backend.
+    LANGFUSE_PUBLIC_KEY = var.langfuse_public_key
+    LANGFUSE_SECRET_KEY = var.langfuse_secret_key
+    LANGFUSE_HOST       = var.langfuse_host
     # LWA: uvicorn listens on this port inside the container
     PORT                    = "8000"
     AWS_LAMBDA_EXEC_WRAPPER = "/opt/extensions/lambda-adapter"

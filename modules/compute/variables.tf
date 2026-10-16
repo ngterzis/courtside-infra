@@ -14,6 +14,19 @@ variable "anthropic_api_key" {
   type      = string
   sensitive = true
 }
+variable "langfuse_public_key" {
+  type    = string
+  default = ""
+}
+variable "langfuse_secret_key" {
+  type      = string
+  sensitive = true
+  default   = ""
+}
+variable "langfuse_host" {
+  type    = string
+  default = "https://cloud.langfuse.com"
+}
 variable "github_repo" {
   type        = string
   description = "org/repo for GitHub Actions OIDC trust, e.g. ngterzis/courtside-backend"
