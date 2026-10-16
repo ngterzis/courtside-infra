@@ -30,7 +30,9 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_INFRA_ROLE_ARN }}
+          # PRs get a read-only role: the apply role only trusts main, and PR
+          # code (including this workflow) must never be able to write to AWS.
+          role-to-assume: ${{ github.event_name == 'pull_request' && secrets.AWS_INFRA_PLAN_ROLE_ARN || secrets.AWS_INFRA_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Terraform init
