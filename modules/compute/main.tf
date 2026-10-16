@@ -86,8 +86,17 @@ resource "aws_iam_role_policy" "lambda_data_api" {
   })
 }
 
+# Shared secret CloudFront sends on every origin request (X-Origin-Verify). The
+# app rejects requests without it, so the execute-api URL and the public chat
+# Function URL can't be called directly, bypassing CloudFront's logs.
+resource "random_password" "origin_secret" {
+  length  = 48
+  special = false
+}
+
 locals {
   lambda_env = {
+    ORIGIN_SECRET     = random_password.origin_secret.result
     ENV               = "prod"
     USE_DATA_API      = "true"
     DB_CLUSTER_ARN    = var.cluster_arn
@@ -184,6 +193,12 @@ resource "aws_lambda_permission" "chat_public_invoke" {
 
 resource "aws_api_gateway_rest_api" "main" {
   name = "${var.name}-api"
+
+  # Our own CloudFront distribution fronts this API. EDGE would add AWS's managed
+  # CloudFront as a second hop on every request.
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
 }
 
 resource "aws_api_gateway_resource" "proxy" {
