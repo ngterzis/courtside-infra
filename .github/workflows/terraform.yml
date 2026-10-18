@@ -54,6 +54,8 @@ jobs:
           terraform plan -no-color -out=tfplan \
             -var="jwt_secret=${{ secrets.JWT_SECRET }}" \
             -var="anthropic_api_key=${{ secrets.ANTHROPIC_API_KEY }}" \
+            -var="langfuse_public_key=${{ secrets.LANGFUSE_PUBLIC_KEY }}" \
+            -var="langfuse_secret_key=${{ secrets.LANGFUSE_SECRET_KEY }}" \
             -var="hosted_zone_name=${{ secrets.HOSTED_ZONE_NAME }}"
 
       # Runs when the plan failed too, so the error lands on the PR; the job

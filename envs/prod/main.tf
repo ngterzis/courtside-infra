@@ -43,9 +43,12 @@ module "compute" {
   db_url_secret_arn         = module.database.db_url_secret_arn
   db_name                   = "courtside"
 
-  jwt_secret        = var.jwt_secret
-  anthropic_api_key = var.anthropic_api_key
-  github_repo       = var.github_repo
+  jwt_secret          = var.jwt_secret
+  anthropic_api_key   = var.anthropic_api_key
+  langfuse_public_key = var.langfuse_public_key
+  langfuse_secret_key = var.langfuse_secret_key
+  langfuse_host       = var.langfuse_host
+  github_repo         = var.github_repo
 }
 
 module "frontend" {

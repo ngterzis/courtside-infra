@@ -92,6 +92,8 @@ terraform apply
 | `hosted_zone_name` | Root domain registered in Route 53 (e.g. `example.com`). The `courtside` subdomain is derived from it. |
 | `jwt_secret` | Secret used by the backend to sign/verify JWTs (sensitive). |
 | `anthropic_api_key` | API key for the Claude-powered chat feature (sensitive). |
+| `langfuse_public_key` / `langfuse_secret_key` | Optional [Langfuse](https://langfuse.com) keys for chat tracing, feedback scores and evals. Empty (the default) leaves tracing off. |
+| `langfuse_host` | Langfuse region endpoint. Defaults to `https://cloud.langfuse.com` (EU). |
 | `github_repo` | `org/repo` allowed to assume the backend deploy role. Defaults to `ngterzis/courtside-backend`. |
 | `aws_region` | Defaults to `eu-central-1`. |
 
@@ -102,7 +104,7 @@ terraform apply
 - **Pull request** → `terraform plan`, with the plan posted back as a PR comment.
 - **Push to `main`** → `terraform apply`.
 
-The workflow authenticates with AWS via OIDC (`AWS_INFRA_ROLE_ARN`) and reads `jwt_secret`, `anthropic_api_key`, and `hosted_zone_name` from GitHub Actions secrets.
+The workflow authenticates with AWS via OIDC (`AWS_INFRA_ROLE_ARN`) and reads `jwt_secret`, `anthropic_api_key`, `hosted_zone_name` and the optional `LANGFUSE_PUBLIC_KEY` / `LANGFUSE_SECRET_KEY` from GitHub Actions secrets.
 
 ## Requirements
 
