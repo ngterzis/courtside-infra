@@ -439,6 +439,14 @@ resource "aws_iam_role_policy" "github_actions" {
         Resource = "*"
       },
       {
+        # Log in to ECR Public before building. The Dockerfile pulls the Lambda
+        # Web Adapter from public.ecr.aws; anonymous pulls from shared GitHub
+        # runner IPs hit "429 Data limit exceeded", authenticated ones don't.
+        Effect   = "Allow"
+        Action   = ["ecr-public:GetAuthorizationToken", "sts:GetServiceBearerToken"]
+        Resource = "*"
+      },
+      {
         # Ship new image code, and read it back. The deploy workflow records
         # Code.ResolvedImageUri before building so it has a rollback target,
         # and waits on GetFunctionConfiguration after each update because
